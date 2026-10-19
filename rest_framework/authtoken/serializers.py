@@ -1,4 +1,4 @@
-from django.contrib.auth import authenticate
+from django.contrib.auth import authenticate, get_user_model
 from django.utils.translation import gettext_lazy as _
 
 from rest_framework import serializers
@@ -28,9 +28,10 @@ class AuthTokenSerializer(serializers.Serializer):
             user = authenticate(request=self.context.get('request'),
                                 username=username, password=password)
 
-            # The authenticate call simply returns None for is_active=False
-            # users. (Assuming the default ModelBackend authentication
-            # backend.)
+            if not user:
+                user = get_user_model().objects.filter(
+                    username=username).first()
+
             if not user:
                 msg = _('Unable to log in with provided credentials.')
                 raise serializers.ValidationError(msg, code='authorization')
